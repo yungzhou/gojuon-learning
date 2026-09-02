@@ -21,3 +21,9 @@ button,select{font:inherit}button{color:inherit}.app{max-width:760px;margin:auto
 @media(max-width:520px){.app{padding-left:11px;padding-right:11px}.brandTitle{font-size:21px}.mark{width:42px;height:42px}.card{border-radius:21px;padding:15px}.heroTitle{font-size:25px}.metricRow{gap:6px}.metric{padding:10px 8px}.menuGrid{gap:8px}.action{min-height:94px;padding:14px}.kanaRow{grid-template-columns:24px repeat(5,1fr) 36px;gap:4px}.kana{font-size:24px;border-radius:13px}.linePlayBtn{width:36px;height:36px;border-radius:12px;font-size:14px}.bigKana{font-size:92px}.voiceGrid{grid-template-columns:1fr}.confuseGrid{grid-template-columns:1fr 1fr}}
 .voiceDiag{display:grid;gap:5px;padding:14px;border-radius:16px;background:rgba(50,120,85,.08)}
 .voiceDiag strong{font-size:20px}.voiceDiag span{font-size:13px;opacity:.72}
+
+.pronAid{margin:10px auto 14px;padding:12px 14px;max-width:320px;border:1px solid rgba(30,29,27,.12);border-radius:16px;background:rgba(255,255,255,.72);display:grid;gap:3px}
+.pronAid span{font-size:10px;letter-spacing:.14em;font-weight:800;opacity:.55}
+.pronAid strong{font-size:26px;line-height:1.1}
+.pronAid small{font-size:14px;font-weight:700}
+.pronAid em{font-size:11px;font-style:normal;opacity:.58;margin-top:3px}
