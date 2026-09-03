@@ -52,19 +52,28 @@ function playLine(label,items){
   stopAudio(); speechSynthesis.cancel(); clearLineHighlight();
   const btn=document.querySelector(`[data-line="${label}"]`); if(btn)btn.classList.add('playing');
   let i=0;
-  const finish=()=>{ if(token===linePlayToken){activeAudio=null;clearLineHighlight()} };
+  // Reuse one HTMLAudioElement for the whole row. This is more reliable on iPhone/Safari
+  // because every next kana stays inside the same user-started media session.
+  const a=new Audio(); activeAudio=a; a.preload='auto';
+  const finish=()=>{
+    if(token===linePlayToken){try{a.pause()}catch(e){} activeAudio=null;clearLineHighlight()}
+  };
   const next=()=>{
     if(token!==linePlayToken)return finish();
     if(i>=items.length)return finish();
     const [k,r]=items[i++];
     $$('.kana.lineSpeaking').forEach(x=>x.classList.remove('lineSpeaking'));
     const el=document.getElementById(`k-${k}`); if(el)el.classList.add('lineSpeaking');
-    const a=new Audio(); activeAudio=a; a.preload='auto'; a.src=audioUrl(r);
-    let advanced=false;
-    const advance=()=>{ if(advanced)return; advanced=true; if(token===linePlayToken)setTimeout(next,320); };
-    a.addEventListener('ended',advance,{once:true});
-    a.addEventListener('error',()=>{activeAudio=null;const u=makeUtterance(k,.66);u.onend=advance;speechSynthesis.speak(u)},{once:true});
-    a.play().catch(()=>{activeAudio=null;const u=makeUtterance(k,.66);u.onend=advance;speechSynthesis.speak(u)});
+    a.onended=null; a.onerror=null;
+    a.src=audioUrl(r);
+    a.onended=()=>{ if(token===linePlayToken)setTimeout(next,320) };
+    a.onerror=()=>{
+      if(token!==linePlayToken)return;
+      const u=makeUtterance(k,.66);
+      u.onend=()=>{ if(token===linePlayToken)setTimeout(next,320) };
+      speechSynthesis.speak(u);
+    };
+    a.play().catch(()=>a.onerror&&a.onerror());
   };
   next();
 }
@@ -77,13 +86,13 @@ function stats(){const total=92,pct=Math.round(S.learned.length/total*100),wrong
 function home(){const st=stats();shell(`${topbar()}<section class="card hero"><div class="eyebrow">TODAY'S JAPANESE</div><div class="heroTitle">每天 5 個音，真正記住五十音。</div><div class="heroText">直接點假名就發音；搭配手寫、聽力與錯題加權複習。</div><div class="metricRow"><div class="metric"><strong>${st.pct}%</strong><span>總進度</span></div><div class="metric"><strong>${S.daily.length}</strong><span>今日練習</span></div><div class="metric"><strong>${st.wrong}</strong><span>待複習</span></div></div><div class="progress"><i style="width:${st.pct}%"></i></div></section>
 <section class="card"><div class="sectionHead"><div><div class="sectionTitle">開始學習</div><div class="sectionSub">建議順序：看字聽音 → 手寫 → 聽力測驗</div></div></div><div class="menuGrid"><button class="action primary" onclick="learn()"><div class="ico">🔊</div><b>點字學發音</b><small>按一下假名就立即唸</small></button><button class="action" onclick="writeMode()"><div class="ico">✍️</div><b>手寫練習</b><small>描字、默寫、反覆練</small></button><button class="action" onclick="quiz('listen')"><div class="ico">🎧</div><b>聽音選字</b><small>訓練耳朵辨識</small></button><button class="action" onclick="quiz('read')"><div class="ico">🧠</div><b>看字選音</b><small>確認讀音記憶</small></button></div></section>
 <section class="card"><div class="sectionHead"><div><div class="sectionTitle">學習文字</div><div class="sectionSub">先平假名，再片假名</div></div></div>${modeSegment()}</section>
-<section class="card"><div class="sectionHead"><div><div class="sectionTitle">日文發音</div><div class="sectionSub">V1.7 MP3 修正版：使用 WEB JAPANESE BOOKS 五十音 MP3；載入失敗才使用 iPhone 日文語音</div></div></div><div class="voiceGrid"><select id="voiceSelect" class="voiceSelect" onchange="changeVoice(this.value)"></select><button class="btn soft" onclick='playLine("試聽",H.slice(0,5))'>🔊 試聽 あいうえお</button></div><div class="row" style="margin-top:10px"><button class="btn small ${S.rate===.78?'primary':''}" onclick="setRate(.78)">標準練習</button><button class="btn small ${S.rate===.62?'primary':''}" onclick="setRate(.62)">慢速</button><button class="btn small ${S.rate===.9?'primary':''}" onclick="setRate(.9)">自然速度</button></div><div id="voiceStatus" class="note" style="margin-top:10px"></div></section>`,`home`);setTimeout(refreshVoices,0)}
+<section class="card"><div class="sectionHead"><div><div class="sectionTitle">日文發音</div><div class="sectionSub">V1.7 外部 MP3 修正版：直接播放 WEB JAPANESE BOOKS 五十音 MP3；失敗時才使用 iPhone 日文語音</div></div></div><div class="voiceGrid"><select id="voiceSelect" class="voiceSelect" onchange="changeVoice(this.value)"></select><button class="btn soft" onclick='playLine("試聽",H.slice(0,5))'>🔊 試聽 あいうえお</button></div><div class="row" style="margin-top:10px"><button class="btn small ${S.rate===.78?'primary':''}" onclick="setRate(.78)">標準練習</button><button class="btn small ${S.rate===.62?'primary':''}" onclick="setRate(.62)">慢速</button><button class="btn small ${S.rate===.9?'primary':''}" onclick="setRate(.9)">自然速度</button></div><div id="voiceStatus" class="note" style="margin-top:10px"></div></section>`,`home`);setTimeout(refreshVoices,0)}
 function changeVoice(v){S.voice=v;save();playLine('試聽',H.slice(0,5))}
 function setRate(r){S.rate=r;save();home();setTimeout(()=>playLine('試聽',H.slice(0,5)),80)}
 function setMode(m){S.mode=m;save();home()}
 
 function rowData(){let D=data();return [['母音',D.slice(0,5)],['K',D.slice(5,10)],['S',D.slice(10,15)],['T',D.slice(15,20)],['N',D.slice(20,25)],['H',D.slice(25,30)],['M',D.slice(30,35)],['Y',[D[35],D[36],D[37]]],['R',D.slice(38,43)],['W',[D[43],D[44],D[45]]]]}
-function learn(){shell(`<div class="lessonTop"><div class="row spread"><button class="btn small" onclick="home()">← 首頁</button><div style="min-width:190px">${modeSegment()}</div></div></div><section class="card"><div class="sectionTitle">點一下就發音；▶ 可整行連續聽</div><div class="sectionSub">綠點＝已學過。整行播放使用真人音檔依序播放，播放時螢幕不會移動。</div><div class="kanaRows">${rowData().map(([label,items])=>`<div class="kanaRow"><div class="rowLabel">${label}</div>${items.map(([k,r])=>`<button id="k-${k}" class="kana ${S.learned.includes(k)?'learned':''}" onclick="showKana('${k}','${r}')">${k}</button>`).join('')}${'<span class="kanaSpacer"></span>'.repeat(5-items.length)}<button class="linePlayBtn" data-line="${label}" onclick='playLine(${JSON.stringify(label)},${JSON.stringify(items)})' aria-label="連續播放 ${label} 行">▶</button></div>`).join('')}</div><div class="lineHelp"><span>▶ 一鍵播放整行</span><button class="btn small" onclick="stopLine()">■ 停止</button></div></section><div id="detail"></div>`,'learn')}
+function learn(){shell(`<div class="lessonTop"><div class="row spread"><button class="btn small" onclick="home()">← 首頁</button><div style="min-width:190px">${modeSegment()}</div></div></div><section class="card"><div class="sectionTitle">點一下就發音；▶ 可整行連續聽</div><div class="sectionSub">綠點＝已學過。整行播放會等上一個 MP3 播完再播下一個；播放時螢幕不會移動。</div><div class="kanaRows">${rowData().map(([label,items])=>`<div class="kanaRow"><div class="rowLabel">${label}</div>${items.map(([k,r])=>`<button id="k-${k}" class="kana ${S.learned.includes(k)?'learned':''}" onclick="showKana('${k}','${r}')">${k}</button>`).join('')}${'<span class="kanaSpacer"></span>'.repeat(5-items.length)}<button class="linePlayBtn" data-line="${label}" onclick='playLine(${JSON.stringify(label)},${JSON.stringify(items)})' aria-label="連續播放 ${label} 行">▶</button></div>`).join('')}</div><div class="lineHelp"><span>▶ 一鍵播放整行</span><button class="btn small" onclick="stopLine()">■ 停止</button></div></section><div id="detail"></div>`,'learn')}
 function showKana(k,r){speak(k);$$('.kana').forEach(x=>x.classList.remove('active'));const b=document.getElementById(`k-${k}`);if(b)b.classList.add('active');$('#detail').innerHTML=`<section class="card detail center"><div class="soundRing">🔊</div><button class="bigKana" onclick="speak('${k}')">${k}</button><div class="roman">${r}</div><div class="listenHint">再點大字可重聽</div><div class="row" style="justify-content:center;margin-top:16px"><button class="btn soft" onclick="speak('${k}',.56)">🐢 慢速</button><button class="btn" onclick="writeSpecific('${k}','${r}')">✍️ 寫這個字</button><button class="btn primary" onclick="markLearned('${k}')">✓ 學會了</button></div></section>`}
 function markLearned(k){if(!S.learned.includes(k))S.learned.push(k);save();const b=document.getElementById(`k-${k}`);if(b)b.classList.add('learned')}
 
