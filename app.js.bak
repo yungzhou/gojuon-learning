@@ -28,10 +28,10 @@ const EN_CUE={
 'ra':'rah（輕彈舌，介於 r/l）','ri':'ree（輕彈舌）','ru':'roo（輕彈舌）','re':'reh（輕彈舌）','ro':'roh（輕彈舌）',
 'wa':'wah','wo':'oh / wo','n':'n / ng（依後音變化）'
 };
-const AUDIO_BASE='https://webjapanese.com/sound/50/';
-const AUDIO_SOURCE='WEB JAPANESE BOOKS / Minimum Japanese';
+const AUDIO_BASE='https://commons.wikimedia.org/wiki/Special:Redirect/file/Ja-';
+const AUDIO_NAME={shi:'Shi',chi:'Chi',tsu:'Tsu',fu:'Fu',wo:'Wo',n:'N'};
 let activeAudio=null;
-function audioUrl(roman){return `${AUDIO_BASE}${roman}.mp3`}
+function audioUrl(roman){const n=AUDIO_NAME[roman]||roman[0].toUpperCase()+roman.slice(1);return `${AUDIO_BASE}${n}.oga`}
 function stopAudio(){if(activeAudio){try{activeAudio.pause();activeAudio.currentTime=0}catch(e){} activeAudio=null}}
 function speakTTS(text,rate=S.rate){if(!('speechSynthesis' in window))return; speechSynthesis.cancel(); const u=makeUtterance(text,rate); speechSynthesis.speak(u)}
 function playKanaAudio(k,roman,onend){linePlayToken++;speechSynthesis.cancel();stopAudio();const a=new Audio(audioUrl(roman));activeAudio=a;a.preload='auto';a.onended=()=>{activeAudio=null;onend&&onend()};a.onerror=()=>{activeAudio=null;const u=makeUtterance(k,S.rate);u.onend=()=>onend&&onend();speechSynthesis.speak(u)};a.play().catch(()=>{activeAudio=null;const u=makeUtterance(k,S.rate);u.onend=()=>onend&&onend();speechSynthesis.speak(u)})}
@@ -47,27 +47,7 @@ function makeUtterance(text,rate=S.rate){const u=new SpeechSynthesisUtterance(te
 function speak(text,rate=S.rate){const pair=[...H,...K].find(x=>x[0]===text);if(pair){$$('.soundRing').forEach(x=>x.classList.add('speaking'));playKanaAudio(pair[0],pair[1],()=>$$('.soundRing').forEach(x=>x.classList.remove('speaking')));return}if(!('speechSynthesis' in window))return;linePlayToken++;stopAudio();speechSynthesis.cancel();const u=makeUtterance(text,rate);u.onstart=()=>$$('.soundRing').forEach(x=>x.classList.add('speaking'));u.onend=()=>$$('.soundRing').forEach(x=>x.classList.remove('speaking'));speechSynthesis.speak(u)}
 function clearLineHighlight(){$$('.kana.lineSpeaking').forEach(x=>x.classList.remove('lineSpeaking'));$$('.linePlayBtn.playing').forEach(x=>x.classList.remove('playing'))}
 function stopLine(){linePlayToken++;stopAudio();speechSynthesis.cancel();clearLineHighlight()}
-function playLine(label,items){
-  const token=++linePlayToken;
-  stopAudio(); speechSynthesis.cancel(); clearLineHighlight();
-  const btn=document.querySelector(`[data-line="${label}"]`); if(btn)btn.classList.add('playing');
-  let i=0;
-  const finish=()=>{ if(token===linePlayToken){activeAudio=null;clearLineHighlight()} };
-  const next=()=>{
-    if(token!==linePlayToken)return finish();
-    if(i>=items.length)return finish();
-    const [k,r]=items[i++];
-    $$('.kana.lineSpeaking').forEach(x=>x.classList.remove('lineSpeaking'));
-    const el=document.getElementById(`k-${k}`); if(el)el.classList.add('lineSpeaking');
-    const a=new Audio(); activeAudio=a; a.preload='auto'; a.src=audioUrl(r);
-    let advanced=false;
-    const advance=()=>{ if(advanced)return; advanced=true; if(token===linePlayToken)setTimeout(next,320); };
-    a.addEventListener('ended',advance,{once:true});
-    a.addEventListener('error',()=>{activeAudio=null;const u=makeUtterance(k,.66);u.onend=advance;speechSynthesis.speak(u)},{once:true});
-    a.play().catch(()=>{activeAudio=null;const u=makeUtterance(k,.66);u.onend=advance;speechSynthesis.speak(u)});
-  };
-  next();
-}
+function playLine(label,items){const token=++linePlayToken;stopAudio();speechSynthesis.cancel();clearLineHighlight();const btn=document.querySelector(`[data-line="${label}"]`);if(btn)btn.classList.add('playing');let i=0;const next=()=>{if(token!==linePlayToken){clearLineHighlight();return}if(i>=items.length){clearLineHighlight();return}const [k,r]=items[i++];$$('.kana.lineSpeaking').forEach(x=>x.classList.remove('lineSpeaking'));const el=document.getElementById(`k-${k}`);if(el)el.classList.add('lineSpeaking');const a=new Audio(audioUrl(r));activeAudio=a;a.preload='auto';const go=()=>{if(token===linePlayToken)setTimeout(next,260)};a.onended=()=>{activeAudio=null;go()};a.onerror=()=>{activeAudio=null;const u=makeUtterance(k,.66);u.onend=go;speechSynthesis.speak(u)};a.play().catch(()=>{activeAudio=null;const u=makeUtterance(k,.66);u.onend=go;speechSynthesis.speak(u)})};next()}
 
 function shell(content,active='home'){ $('#app').innerHTML=`<main class="app">${content}<div class="footer">五十音學習 App V${VERSION} · 學習紀錄保存在這台裝置</div></main>${nav(active)}`; }
 function topbar(){return `<div class="topbar"><div class="brand"><div class="mark">あ</div><div><div class="brandTitle">五十音學習</div><div class="version">V${VERSION} · 聽、看、寫、複習</div></div></div><div class="chip">🔥 ${S.streak||0} 天</div></div>`}
@@ -77,9 +57,9 @@ function stats(){const total=92,pct=Math.round(S.learned.length/total*100),wrong
 function home(){const st=stats();shell(`${topbar()}<section class="card hero"><div class="eyebrow">TODAY'S JAPANESE</div><div class="heroTitle">每天 5 個音，真正記住五十音。</div><div class="heroText">直接點假名就發音；搭配手寫、聽力與錯題加權複習。</div><div class="metricRow"><div class="metric"><strong>${st.pct}%</strong><span>總進度</span></div><div class="metric"><strong>${S.daily.length}</strong><span>今日練習</span></div><div class="metric"><strong>${st.wrong}</strong><span>待複習</span></div></div><div class="progress"><i style="width:${st.pct}%"></i></div></section>
 <section class="card"><div class="sectionHead"><div><div class="sectionTitle">開始學習</div><div class="sectionSub">建議順序：看字聽音 → 手寫 → 聽力測驗</div></div></div><div class="menuGrid"><button class="action primary" onclick="learn()"><div class="ico">🔊</div><b>點字學發音</b><small>按一下假名就立即唸</small></button><button class="action" onclick="writeMode()"><div class="ico">✍️</div><b>手寫練習</b><small>描字、默寫、反覆練</small></button><button class="action" onclick="quiz('listen')"><div class="ico">🎧</div><b>聽音選字</b><small>訓練耳朵辨識</small></button><button class="action" onclick="quiz('read')"><div class="ico">🧠</div><b>看字選音</b><small>確認讀音記憶</small></button></div></section>
 <section class="card"><div class="sectionHead"><div><div class="sectionTitle">學習文字</div><div class="sectionSub">先平假名，再片假名</div></div></div>${modeSegment()}</section>
-<section class="card"><div class="sectionHead"><div><div class="sectionTitle">日文發音</div><div class="sectionSub">V1.7 MP3 修正版：使用 WEB JAPANESE BOOKS 五十音 MP3；載入失敗才使用 iPhone 日文語音</div></div></div><div class="voiceGrid"><select id="voiceSelect" class="voiceSelect" onchange="changeVoice(this.value)"></select><button class="btn soft" onclick='playLine("試聽",H.slice(0,5))'>🔊 試聽 あいうえお</button></div><div class="row" style="margin-top:10px"><button class="btn small ${S.rate===.78?'primary':''}" onclick="setRate(.78)">標準練習</button><button class="btn small ${S.rate===.62?'primary':''}" onclick="setRate(.62)">慢速</button><button class="btn small ${S.rate===.9?'primary':''}" onclick="setRate(.9)">自然速度</button></div><div id="voiceStatus" class="note" style="margin-top:10px"></div></section>`,`home`);setTimeout(refreshVoices,0)}
-function changeVoice(v){S.voice=v;save();playLine('試聽',H.slice(0,5))}
-function setRate(r){S.rate=r;save();home();setTimeout(()=>playLine('試聽',H.slice(0,5)),80)}
+<section class="card"><div class="sectionHead"><div><div class="sectionTitle">日文發音</div><div class="sectionSub">V1.7 真人發音：優先播放 Wikimedia Commons 真人錄音；載入失敗才使用 iPhone 日文語音</div></div></div><div class="voiceGrid"><select id="voiceSelect" class="voiceSelect" onchange="changeVoice(this.value)"></select><button class="btn soft" onclick="speak('あいうえお')">🔊 試聽 あいうえお</button></div><div class="row" style="margin-top:10px"><button class="btn small ${S.rate===.78?'primary':''}" onclick="setRate(.78)">標準練習</button><button class="btn small ${S.rate===.62?'primary':''}" onclick="setRate(.62)">慢速</button><button class="btn small ${S.rate===.9?'primary':''}" onclick="setRate(.9)">自然速度</button></div><div id="voiceStatus" class="note" style="margin-top:10px"></div></section>`,`home`);setTimeout(refreshVoices,0)}
+function changeVoice(v){S.voice=v;save();speak('あいうえお')}
+function setRate(r){S.rate=r;save();home();setTimeout(()=>speak('あいうえお'),80)}
 function setMode(m){S.mode=m;save();home()}
 
 function rowData(){let D=data();return [['母音',D.slice(0,5)],['K',D.slice(5,10)],['S',D.slice(10,15)],['T',D.slice(15,20)],['N',D.slice(20,25)],['H',D.slice(25,30)],['M',D.slice(30,35)],['Y',[D[35],D[36],D[37]]],['R',D.slice(38,43)],['W',[D[43],D[44],D[45]]]]}
