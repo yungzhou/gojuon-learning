@@ -7,3 +7,7 @@
 本 V1.7 修正版目前以來源站 MP3 URL 播放，並非把 46 個 MP3 實體檔案包進 ZIP。
 原因：此工作環境無法直接下載外部二進位音訊檔。
 若要「真正完全離線內建」，需把來源 MP3 檔放入 audio/，並把 AUDIO_BASE 改為 'audio/'。
+
+V1.8 note:
+- App shell supports PWA/offline loading after first visit.
+- Pronunciation MP3 remains external/online in this version; when unavailable, the app falls back to iPhone Japanese system speech.

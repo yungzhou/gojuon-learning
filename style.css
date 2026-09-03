@@ -27,3 +27,18 @@ button,select{font:inherit}button{color:inherit}.app{max-width:760px;margin:auto
 .pronAid strong{font-size:26px;line-height:1.1}
 .pronAid small{font-size:14px;font-weight:700}
 .pronAid em{font-size:11px;font-style:normal;opacity:.58;margin-top:3px}
+
+
+/* V1.8 teacher / shadowing mode */
+.teacherHero{background:linear-gradient(145deg,#fffdf9,#fff3ea)}
+.teacherAction{background:#fff8ef;border-color:#efd9bd}
+.teacherModes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.modeCard{border:1px solid var(--line);background:#fff;border-radius:17px;padding:12px 8px;min-height:76px;text-align:center}
+.modeCard b{display:block;font-size:13px}.modeCard small{display:block;color:var(--muted);font-size:10px;margin-top:5px;line-height:1.35}
+.modeCard.active{background:var(--ink);color:#fff;border-color:var(--ink)}.modeCard.active small{color:#d5d1cb}
+.teacherStage{overflow:hidden}.teacherStatus{font-size:13px;font-weight:850;color:var(--muted);min-height:20px}
+.teacherCurrent{font:700 112px/1.05 "Hiragino Mincho ProN","Yu Mincho",serif;margin-top:8px;transition:.16s}
+.teacherCurrent.speaking{color:var(--accent);transform:scale(1.04)}.teacherRoman{font-size:23px;font-weight:900;color:var(--muted)}
+.teacherCue{font-size:14px;font-weight:800;margin:8px 0 14px;min-height:22px}.teacherProgress{height:8px;background:#ece7df;border-radius:999px;overflow:hidden;margin:0 auto 14px;max-width:360px}.teacherProgress i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s}
+.teacherRows{display:grid;gap:8px;margin-top:12px}.teacherRowBtn{width:100%;border:1px solid var(--line);background:#fff;border-radius:17px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left}.teacherRowBtn span{min-width:0}.teacherRowBtn b{display:block;font-size:13px}.teacherRowBtn small{display:block;color:var(--muted);font:700 19px/1.4 "Hiragino Mincho ProN","Yu Mincho",serif;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.teacherRowBtn strong{font-size:12px;color:var(--accent);white-space:nowrap}
+@media(max-width:520px){.teacherModes{grid-template-columns:1fr 1fr 1fr;gap:5px}.modeCard{padding:10px 5px}.teacherCurrent{font-size:96px}.teacherRowBtn{padding:11px 12px}}

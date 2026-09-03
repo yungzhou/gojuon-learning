@@ -1,0 +1,14 @@
+{
+  "name": "五十音學習",
+  "short_name": "五十音",
+  "description": "平假名、片假名、發音、跟讀、手寫與聽力練習",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#fbfaf7",
+  "icons": [
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png"}
+  ]
+}

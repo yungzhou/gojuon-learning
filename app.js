@@ -1,15 +1,16 @@
-const VERSION='1.7';
+const VERSION='1.8';
 const H=[['あ','a'],['い','i'],['う','u'],['え','e'],['お','o'],['か','ka'],['き','ki'],['く','ku'],['け','ke'],['こ','ko'],['さ','sa'],['し','shi'],['す','su'],['せ','se'],['そ','so'],['た','ta'],['ち','chi'],['つ','tsu'],['て','te'],['と','to'],['な','na'],['に','ni'],['ぬ','nu'],['ね','ne'],['の','no'],['は','ha'],['ひ','hi'],['ふ','fu'],['へ','he'],['ほ','ho'],['ま','ma'],['み','mi'],['む','mu'],['め','me'],['も','mo'],['や','ya'],['ゆ','yu'],['よ','yo'],['ら','ra'],['り','ri'],['る','ru'],['れ','re'],['ろ','ro'],['わ','wa'],['を','wo'],['ん','n']];
 const K=[['ア','a'],['イ','i'],['ウ','u'],['エ','e'],['オ','o'],['カ','ka'],['キ','ki'],['ク','ku'],['ケ','ke'],['コ','ko'],['サ','sa'],['シ','shi'],['ス','su'],['セ','se'],['ソ','so'],['タ','ta'],['チ','chi'],['ツ','tsu'],['テ','te'],['ト','to'],['ナ','na'],['ニ','ni'],['ヌ','nu'],['ネ','ne'],['ノ','no'],['ハ','ha'],['ヒ','hi'],['フ','fu'],['ヘ','he'],['ホ','ho'],['マ','ma'],['ミ','mi'],['ム','mu'],['メ','me'],['モ','mo'],['ヤ','ya'],['ユ','yu'],['ヨ','yo'],['ラ','ra'],['リ','ri'],['ル','ru'],['レ','re'],['ロ','ro'],['ワ','wa'],['ヲ','wo'],['ン','n']];
 const CONF=[['あ','お','右側曲線'],['き','さ','下半部'],['ぬ','め','收尾方向'],['れ','わ','右側形狀'],['シ','ツ','點的方向'],['ソ','ン','起筆角度']];
-const KEY='gojuon-v17';
+const KEY='gojuon-v18';
+const old17=JSON.parse(localStorage.getItem('gojuon-v17')||'null');
 const old16=JSON.parse(localStorage.getItem('gojuon-v16')||'null');
 const old15=JSON.parse(localStorage.getItem('gojuon-v15')||'null');
 const old14=JSON.parse(localStorage.getItem('gojuon-v14')||'null');
 const old13=JSON.parse(localStorage.getItem('gojuon-v13')||'null');
 const old=JSON.parse(localStorage.getItem('gojuon-v12')||'null');
-let S=JSON.parse(localStorage.getItem(KEY)||'null')||old16||old15||old14||old13||old||{mode:'hira',learned:[],wrong:{},correct:{},streak:0,lastDay:'',daily:[],guide:1,voice:'',rate:.78};
-if(S.rate==null)S.rate=.78;if(S.voice==null)S.voice='';if(!S.learned)S.learned=[];if(!S.wrong)S.wrong={};if(!S.correct)S.correct={};if(!S.daily)S.daily=[];
+let S=JSON.parse(localStorage.getItem(KEY)||'null')||old17||old16||old15||old14||old13||old||{mode:'hira',learned:[],wrong:{},correct:{},streak:0,lastDay:'',daily:[],guide:1,voice:'',rate:.78};
+if(S.rate==null)S.rate=.78;if(S.voice==null)S.voice='';if(S.teacherMode==null)S.teacherMode='follow';if(S.followGap==null)S.followGap=1500;if(!S.learned)S.learned=[];if(!S.wrong)S.wrong={};if(!S.correct)S.correct={};if(!S.daily)S.daily=[];
 const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)], data=()=>S.mode==='hira'?H:K;
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 const today=()=>new Date().toLocaleDateString('sv-SE');
@@ -79,25 +80,73 @@ function playLine(label,items){
 }
 
 function shell(content,active='home'){ $('#app').innerHTML=`<main class="app">${content}<div class="footer">五十音學習 App V${VERSION} · 學習紀錄保存在這台裝置</div></main>${nav(active)}`; }
-function topbar(){return `<div class="topbar"><div class="brand"><div class="mark">あ</div><div><div class="brandTitle">五十音學習</div><div class="version">V${VERSION} · 聽、看、寫、複習</div></div></div><div class="chip">🔥 ${S.streak||0} 天</div></div>`}
+function topbar(){return `<div class="topbar"><div class="brand"><div class="mark">あ</div><div><div class="brandTitle">五十音學習</div><div class="version">V${VERSION} · 聽、跟讀、寫、複習</div></div></div><div class="chip">🔥 ${S.streak||0} 天</div></div>`}
 function nav(active){return `<nav class="bottomNav"><button class="navBtn ${active==='home'?'active':''}" onclick="home()"><span>⌂</span>首頁</button><button class="navBtn ${active==='learn'?'active':''}" onclick="learn()"><span>あ</span>學習</button><button class="navBtn ${active==='write'?'active':''}" onclick="writeMode()"><span>✍︎</span>手寫</button><button class="navBtn ${active==='review'?'active':''}" onclick="review()"><span>↻</span>複習</button></nav>`}
 function modeSegment(){return `<div class="segment"><button class="${S.mode==='hira'?'active':''}" onclick="setMode('hira')">平假名</button><button class="${S.mode==='kata'?'active':''}" onclick="setMode('kata')">片假名</button></div>`}
 function stats(){const total=92,pct=Math.round(S.learned.length/total*100),wrong=Object.values(S.wrong).reduce((a,b)=>a+b,0);return {pct,wrong,total}}
-function home(){const st=stats();shell(`${topbar()}<section class="card hero"><div class="eyebrow">TODAY'S JAPANESE</div><div class="heroTitle">每天 5 個音，真正記住五十音。</div><div class="heroText">直接點假名就發音；搭配手寫、聽力與錯題加權複習。</div><div class="metricRow"><div class="metric"><strong>${st.pct}%</strong><span>總進度</span></div><div class="metric"><strong>${S.daily.length}</strong><span>今日練習</span></div><div class="metric"><strong>${st.wrong}</strong><span>待複習</span></div></div><div class="progress"><i style="width:${st.pct}%"></i></div></section>
-<section class="card"><div class="sectionHead"><div><div class="sectionTitle">開始學習</div><div class="sectionSub">建議順序：看字聽音 → 手寫 → 聽力測驗</div></div></div><div class="menuGrid"><button class="action primary" onclick="learn()"><div class="ico">🔊</div><b>點字學發音</b><small>按一下假名就立即唸</small></button><button class="action" onclick="writeMode()"><div class="ico">✍️</div><b>手寫練習</b><small>描字、默寫、反覆練</small></button><button class="action" onclick="quiz('listen')"><div class="ico">🎧</div><b>聽音選字</b><small>訓練耳朵辨識</small></button><button class="action" onclick="quiz('read')"><div class="ico">🧠</div><b>看字選音</b><small>確認讀音記憶</small></button></div></section>
+function home(){teacherToken++;stopAudio();speechSynthesis.cancel();const st=stats();shell(`${topbar()}<section class="card hero"><div class="eyebrow">TODAY'S JAPANESE</div><div class="heroTitle">每天 5 個音，真正記住五十音。</div><div class="heroText">直接點假名就發音；新增老師帶讀，聽一個、跟著唸一個。</div><div class="metricRow"><div class="metric"><strong>${st.pct}%</strong><span>總進度</span></div><div class="metric"><strong>${S.daily.length}</strong><span>今日練習</span></div><div class="metric"><strong>${st.wrong}</strong><span>待複習</span></div></div><div class="progress"><i style="width:${st.pct}%"></i></div></section>
+<section class="card"><div class="sectionHead"><div><div class="sectionTitle">開始學習</div><div class="sectionSub">建議順序：看字聽音 → 手寫 → 聽力測驗</div></div></div><div class="menuGrid"><button class="action primary" onclick="learn()"><div class="ico">🔊</div><b>點字學發音</b><small>按一下假名就立即唸</small></button><button class="action teacherAction" onclick="teacherMode()"><div class="ico">👩‍🏫</div><b>老師帶讀</b><small>聽一個 → 留時間跟讀</small></button><button class="action" onclick="writeMode()"><div class="ico">✍️</div><b>手寫練習</b><small>描字、默寫、反覆練</small></button><button class="action" onclick="quiz('listen')"><div class="ico">🎧</div><b>聽音選字</b><small>訓練耳朵辨識</small></button><button class="action" onclick="quiz('read')"><div class="ico">🧠</div><b>看字選音</b><small>確認讀音記憶</small></button></div></section>
 <section class="card"><div class="sectionHead"><div><div class="sectionTitle">學習文字</div><div class="sectionSub">先平假名，再片假名</div></div></div>${modeSegment()}</section>
-<section class="card"><div class="sectionHead"><div><div class="sectionTitle">日文發音</div><div class="sectionSub">V1.7 外部 MP3 修正版：直接播放 WEB JAPANESE BOOKS 五十音 MP3；失敗時才使用 iPhone 日文語音</div></div></div><div class="voiceGrid"><select id="voiceSelect" class="voiceSelect" onchange="changeVoice(this.value)"></select><button class="btn soft" onclick='playLine("試聽",H.slice(0,5))'>🔊 試聽 あいうえお</button></div><div class="row" style="margin-top:10px"><button class="btn small ${S.rate===.78?'primary':''}" onclick="setRate(.78)">標準練習</button><button class="btn small ${S.rate===.62?'primary':''}" onclick="setRate(.62)">慢速</button><button class="btn small ${S.rate===.9?'primary':''}" onclick="setRate(.9)">自然速度</button></div><div id="voiceStatus" class="note" style="margin-top:10px"></div></section>`,`home`);setTimeout(refreshVoices,0)}
+<section class="card"><div class="sectionHead"><div><div class="sectionTitle">日文發音</div><div class="sectionSub">V1.8：外部 MP3 為主要發音；新增老師帶讀／跟讀模式。MP3 失敗時才使用 iPhone 日文語音</div></div></div><div class="voiceGrid"><select id="voiceSelect" class="voiceSelect" onchange="changeVoice(this.value)"></select><button class="btn soft" onclick='playLine("試聽",H.slice(0,5))'>🔊 試聽 あいうえお</button></div><div class="row" style="margin-top:10px"><button class="btn small ${S.rate===.78?'primary':''}" onclick="setRate(.78)">標準練習</button><button class="btn small ${S.rate===.62?'primary':''}" onclick="setRate(.62)">慢速</button><button class="btn small ${S.rate===.9?'primary':''}" onclick="setRate(.9)">自然速度</button></div><div id="voiceStatus" class="note" style="margin-top:10px"></div></section>`,`home`);setTimeout(refreshVoices,0)}
 function changeVoice(v){S.voice=v;save();playLine('試聽',H.slice(0,5))}
 function setRate(r){S.rate=r;save();home();setTimeout(()=>playLine('試聽',H.slice(0,5)),80)}
 function setMode(m){S.mode=m;save();home()}
 
 function rowData(){let D=data();return [['母音',D.slice(0,5)],['K',D.slice(5,10)],['S',D.slice(10,15)],['T',D.slice(15,20)],['N',D.slice(20,25)],['H',D.slice(25,30)],['M',D.slice(30,35)],['Y',[D[35],D[36],D[37]]],['R',D.slice(38,43)],['W',[D[43],D[44],D[45]]]]}
-function learn(){shell(`<div class="lessonTop"><div class="row spread"><button class="btn small" onclick="home()">← 首頁</button><div style="min-width:190px">${modeSegment()}</div></div></div><section class="card"><div class="sectionTitle">點一下就發音；▶ 可整行連續聽</div><div class="sectionSub">綠點＝已學過。整行播放會等上一個 MP3 播完再播下一個；播放時螢幕不會移動。</div><div class="kanaRows">${rowData().map(([label,items])=>`<div class="kanaRow"><div class="rowLabel">${label}</div>${items.map(([k,r])=>`<button id="k-${k}" class="kana ${S.learned.includes(k)?'learned':''}" onclick="showKana('${k}','${r}')">${k}</button>`).join('')}${'<span class="kanaSpacer"></span>'.repeat(5-items.length)}<button class="linePlayBtn" data-line="${label}" onclick='playLine(${JSON.stringify(label)},${JSON.stringify(items)})' aria-label="連續播放 ${label} 行">▶</button></div>`).join('')}</div><div class="lineHelp"><span>▶ 一鍵播放整行</span><button class="btn small" onclick="stopLine()">■ 停止</button></div></section><div id="detail"></div>`,'learn')}
+function learn(){teacherToken++;stopAudio();speechSynthesis.cancel();shell(`<div class="lessonTop"><div class="row spread"><button class="btn small" onclick="home()">← 首頁</button><div style="min-width:190px">${modeSegment()}</div></div></div><section class="card"><div class="sectionTitle">點一下就發音；▶ 可整行連續聽</div><div class="sectionSub">綠點＝已學過。整行播放會等上一個 MP3 播完再播下一個；播放時螢幕不會移動。</div><div class="kanaRows">${rowData().map(([label,items])=>`<div class="kanaRow"><div class="rowLabel">${label}</div>${items.map(([k,r])=>`<button id="k-${k}" class="kana ${S.learned.includes(k)?'learned':''}" onclick="showKana('${k}','${r}')">${k}</button>`).join('')}${'<span class="kanaSpacer"></span>'.repeat(5-items.length)}<button class="linePlayBtn" data-line="${label}" onclick='playLine(${JSON.stringify(label)},${JSON.stringify(items)})' aria-label="連續播放 ${label} 行">▶</button></div>`).join('')}</div><div class="lineHelp"><span>▶ 一鍵播放整行</span><button class="btn small" onclick="stopLine()">■ 停止</button></div></section><div id="detail"></div>`,'learn')}
 function showKana(k,r){speak(k);$$('.kana').forEach(x=>x.classList.remove('active'));const b=document.getElementById(`k-${k}`);if(b)b.classList.add('active');$('#detail').innerHTML=`<section class="card detail center"><div class="soundRing">🔊</div><button class="bigKana" onclick="speak('${k}')">${k}</button><div class="roman">${r}</div><div class="listenHint">再點大字可重聽</div><div class="row" style="justify-content:center;margin-top:16px"><button class="btn soft" onclick="speak('${k}',.56)">🐢 慢速</button><button class="btn" onclick="writeSpecific('${k}','${r}')">✍️ 寫這個字</button><button class="btn primary" onclick="markLearned('${k}')">✓ 學會了</button></div></section>`}
 function markLearned(k){if(!S.learned.includes(k))S.learned.push(k);save();const b=document.getElementById(`k-${k}`);if(b)b.classList.add('learned')}
 
 const rand=a=>a[Math.floor(Math.random()*a.length)];
 function weightedPool(){let pool=[];data().forEach(x=>{let n=1+Math.min(6,(S.wrong[x[0]]||0)*2);for(let i=0;i<n;i++)pool.push(x)});return pool}
+let teacherToken=0;
+function setTeacherMode(m){S.teacherMode=m;save();teacherMode()}
+function setTeacherKanaMode(m){S.mode=m;save();teacherMode()}
+function stopTeacher(){teacherToken++;stopAudio();speechSynthesis.cancel();clearLineHighlight();const st=$('#teacherStatus');if(st)st.textContent='已停止';const cur=$('#teacherCurrent');if(cur)cur.classList.remove('speaking')}
+function teacherMode(){
+  teacherToken++; stopLine(); stopAudio(); speechSynthesis.cancel();
+  const rows=rowData();
+  shell(`<div class="lessonTop"><div class="row spread"><button class="btn small" onclick="home()">← 首頁</button><div style="min-width:190px"><div class="segment"><button class="${S.mode==='hira'?'active':''}" onclick="setTeacherKanaMode('hira')">平假名</button><button class="${S.mode==='kata'?'active':''}" onclick="setTeacherKanaMode('kata')">片假名</button></div></div></div></div>
+  <section class="card teacherHero"><div class="eyebrow">V1.8 TEACHER MODE</div><div class="sectionTitle">老師帶讀／跟讀練習</div><div class="sectionSub">先聽 MP3，再留時間讓你跟著唸。整個過程畫面不會自動捲動。</div>
+  <div class="teacherModes">
+    <button class="modeCard ${S.teacherMode==='normal'?'active':''}" onclick="setTeacherMode('normal')"><b>▶ 連續播放</b><small>每音間隔約 0.35 秒</small></button>
+    <button class="modeCard ${S.teacherMode==='follow'?'active':''}" onclick="setTeacherMode('follow')"><b>🗣️ 跟讀模式</b><small>每音留 1.5 秒跟讀</small></button>
+    <button class="modeCard ${S.teacherMode==='repeat3'?'active':''}" onclick="setTeacherMode('repeat3')"><b>×3 重複</b><small>每個音播放 3 次</small></button>
+  </div></section>
+  <section class="card center teacherStage"><div id="teacherStatus" class="teacherStatus">選一排開始練習</div><div id="teacherCurrent" class="teacherCurrent">あ</div><div id="teacherRoman" class="teacherRoman">a</div><div id="teacherCue" class="teacherCue">聽老師 → 跟著唸</div><div class="teacherProgress"><i id="teacherProgressBar" style="width:0%"></i></div><button class="btn small" onclick="stopTeacher()">■ 停止</button></section>
+  <section class="card"><div class="sectionTitle">選擇練習行</div><div class="teacherRows">${rows.map(([label,items])=>`<button class="teacherRowBtn" onclick='startTeacher(${JSON.stringify(label)},${JSON.stringify(items)})'><span><b>${label}</b><small>${items.map(x=>x[0]).join(' ・ ')}</small></span><strong>開始 ▶</strong></button>`).join('')}</div></section>`,'learn');
+}
+function startTeacher(label,items){
+  const token=++teacherToken; linePlayToken++; stopAudio(); speechSynthesis.cancel(); clearLineHighlight();
+  let idx=0, rep=0; const mode=S.teacherMode||'follow'; const reps=mode==='repeat3'?3:1;
+  const a=new Audio(); activeAudio=a; a.preload='auto';
+  const status=$('#teacherStatus'), cur=$('#teacherCurrent'), roman=$('#teacherRoman'), cue=$('#teacherCue'), bar=$('#teacherProgressBar');
+  if(status)status.textContent=`${label} 行 · ${mode==='follow'?'跟讀模式':mode==='repeat3'?'每音 3 次':'連續播放'}`;
+  const finish=()=>{if(token!==teacherToken)return;try{a.pause()}catch(e){}activeAudio=null;if(status)status.textContent='✓ 這一排完成';if(cue)cue.textContent='很好！可以再練一次或換下一排';if(bar)bar.style.width='100%';items.forEach(([k])=>{if(!S.daily.includes(k))S.daily.push(k)});save()};
+  const next=()=>{
+    if(token!==teacherToken)return;
+    if(idx>=items.length)return finish();
+    const [k,r]=items[idx];
+    if(cur){cur.textContent=k;cur.classList.add('speaking')} if(roman)roman.textContent=r;
+    if(cue)cue.textContent=mode==='follow'?'先聽老師，接著換你唸':'仔細聽每一個音';
+    if(bar)bar.style.width=`${Math.round(((idx+(rep/reps))/items.length)*100)}%`;
+    a.onended=null;a.onerror=null;a.src=audioUrl(r);
+    const afterSound=()=>{
+      if(token!==teacherToken)return;
+      rep++;
+      if(rep<reps){if(cue)cue.textContent=`再聽一次（${rep+1}/3）`;setTimeout(next,520);return}
+      rep=0; idx++;
+      const gap=mode==='follow'?(S.followGap||1500):mode==='repeat3'?900:350;
+      if(mode==='follow'&&cue)cue.textContent='換你唸 👄';
+      setTimeout(next,gap);
+    };
+    a.onended=afterSound;
+    a.onerror=()=>{if(token!==teacherToken)return;const u=makeUtterance(k,.72);u.onend=afterSound;speechSynthesis.cancel();speechSynthesis.speak(u)};
+    a.play().catch(()=>a.onerror&&a.onerror());
+  };
+  next();
+}
+
 function quiz(type){let q=rand(weightedPool()),opts=[q];while(opts.length<4){let x=rand(data());if(!opts.some(o=>o[0]===x[0]))opts.push(x)}opts.sort(()=>Math.random()-.5);shell(`<div class="row spread"><button class="btn small" onclick="home()">← 首頁</button><div class="chip">${type==='listen'?'🎧 聽音選字':'🧠 看字選音'}</div></div><section class="card center"><div class="quizPrompt">${type==='listen'?`<button class="btn soft" style="width:100%;min-height:130px" onclick="speak('${q[0]}')"><div class="soundRing">🔊</div><b>點這裡再聽一次</b></button>`:`<button class="bigKana" onclick="speak('${q[0]}')">${q[0]}</button>`}</div><div id="choices">${opts.map(o=>`<button class="choice" onclick="answer(this,'${q[0]}','${type==='listen'?o[0]:o[1]}','${type}','${q[1]}')">${type==='listen'?o[0]:o[1]}</button>`).join('')}</div><div id="fb" class="note" style="margin-top:10px"></div></section>`,'review');if(type==='listen')setTimeout(()=>speak(q[0]),100)}
 function answer(btn,k,val,type,roman){let ok=type==='listen'?val===k:val===roman;$$('.choice').forEach(b=>b.disabled=true);btn.classList.add(ok?'ok':'bad');if(ok){S.correct[k]=(S.correct[k]||0)+1;if((S.wrong[k]||0)>0)S.wrong[k]--;$('#fb').textContent='答對了！';speak(k)}else{S.wrong[k]=(S.wrong[k]||0)+1;$('#fb').textContent=`答錯了。正確是 ${k} / ${roman}`;speak(k)}S.daily.push({k,ok,t:Date.now(),type});save();setTimeout(()=>quiz(type),1000)}
 
